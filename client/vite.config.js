@@ -8,7 +8,7 @@ export default defineConfig({
     hmr: { overlay: true },
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "https://learnify-server-lhub.onrender.com",
         changeOrigin: true,
       },
     },
