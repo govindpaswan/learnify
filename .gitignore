@@ -1,7 +1,32 @@
+# Dependencies
 node_modules/
+*/node_modules/
+
+# Environment files
 .env
-dist/
-build/
-.DS_Store
+*/.env
+!.env.example
+!*/.env.example
+
+# Build output
+client/dist/
+client/build/
+
+# Uploads (use Cloudinary in production)
+server/uploads/*.mp4
+server/uploads/*.mov
+server/uploads/*.jpg
+server/uploads/*.png
+server/uploads/*.webp
+
+# Logs
 *.log
-uploads/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

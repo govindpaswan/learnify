@@ -1,0 +1,19 @@
+{
+  "name": "learnify",
+  "version": "1.0.0",
+  "description": "Learnify MERN - Full Stack Online Learning Platform",
+  "scripts": {
+    "start": "cd server && node server.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm install && npm run build",
+    "render-build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

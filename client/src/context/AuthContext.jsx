@@ -3,7 +3,6 @@ import axios from "axios";
 
 const BASE_URL = () => import.meta.env.VITE_API_URL || "/api";
 
-// ── Helper: fetch user with a token ───────────────────────────────
 const fetchUserWithToken = async (token) => {
   if (!token) return null;
   try {
@@ -16,16 +15,14 @@ const fetchUserWithToken = async (token) => {
   }
 };
 
-// ══════════════════════════════════════════════════════════════════
-// STUDENT AUTH CONTEXT
-// ══════════════════════════════════════════════════════════════════
+// ── STUDENT AUTH ───────────────────────────────────────────────────
 const StudentAuthContext = createContext();
 
 const studentReducer = (state, action) => {
   switch (action.type) {
     case "SET_USER":
       return { ...state, user: action.payload, isAuthenticated: true, loading: false };
-    case "LOADING_DONE":
+    case "DONE":
       return { ...state, loading: false };
     case "LOGIN":
       localStorage.setItem("learnify-student-token", action.payload.token);
@@ -50,20 +47,24 @@ export const StudentAuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("learnify-student-token");
-    if (!token) { dispatch({ type: "LOADING_DONE" }); return; }
+    if (!token) { dispatch({ type: "DONE" }); return; }
     fetchUserWithToken(token).then((user) => {
       if (user && user.role === "student") {
         dispatch({ type: "SET_USER", payload: user });
       } else {
         localStorage.removeItem("learnify-student-token");
-        dispatch({ type: "LOADING_DONE" });
+        dispatch({ type: "DONE" });
       }
     });
   }, []);
 
   const login = async (credentials) => {
     const { data } = await axios.post(`${BASE_URL()}/auth/login`, credentials);
-    if (data.data.role !== "student") throw new Error("Student account required");
+    if (data.data.role !== "student") {
+      throw Object.assign(new Error("This is an admin account. Please use the Admin Login page."), {
+        response: { data: { message: "This is an admin account. Please use the Admin Login page." } },
+      });
+    }
     dispatch({ type: "LOGIN", payload: data.data });
     return data.data;
   };
@@ -74,7 +75,7 @@ export const StudentAuthProvider = ({ children }) => {
     return data.data;
   };
 
-  const logout    = ()       => dispatch({ type: "LOGOUT" });
+  const logout     = ()       => dispatch({ type: "LOGOUT" });
   const updateUser = (updates) => dispatch({ type: "UPDATE_USER", payload: updates });
 
   return (
@@ -84,16 +85,14 @@ export const StudentAuthProvider = ({ children }) => {
   );
 };
 
-// ══════════════════════════════════════════════════════════════════
-// ADMIN AUTH CONTEXT
-// ══════════════════════════════════════════════════════════════════
+// ── ADMIN AUTH ─────────────────────────────────────────────────────
 const AdminAuthContext = createContext();
 
 const adminReducer = (state, action) => {
   switch (action.type) {
     case "SET_USER":
       return { ...state, user: action.payload, isAuthenticated: true, loading: false };
-    case "LOADING_DONE":
+    case "DONE":
       return { ...state, loading: false };
     case "LOGIN":
       localStorage.setItem("learnify-admin-token", action.payload.token);
@@ -118,13 +117,13 @@ export const AdminAuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("learnify-admin-token");
-    if (!token) { dispatch({ type: "LOADING_DONE" }); return; }
+    if (!token) { dispatch({ type: "DONE" }); return; }
     fetchUserWithToken(token).then((user) => {
       if (user && user.role === "admin") {
         dispatch({ type: "SET_USER", payload: user });
       } else {
         localStorage.removeItem("learnify-admin-token");
-        dispatch({ type: "LOADING_DONE" });
+        dispatch({ type: "DONE" });
       }
     });
   }, []);
@@ -132,13 +131,15 @@ export const AdminAuthProvider = ({ children }) => {
   const login = async (credentials) => {
     const { data } = await axios.post(`${BASE_URL()}/auth/login`, credentials);
     if (data.data.role !== "admin") {
-      throw Object.assign(new Error("Access denied. Admin account required."), { response: { data: { message: "Access denied. Admin account required." } } });
+      throw Object.assign(new Error("Access denied. Admin account required."), {
+        response: { data: { message: "Access denied. Admin account required." } },
+      });
     }
     dispatch({ type: "LOGIN", payload: data.data });
     return data.data;
   };
 
-  const logout = () => dispatch({ type: "LOGOUT" });
+  const logout     = ()       => dispatch({ type: "LOGOUT" });
   const updateUser = (updates) => dispatch({ type: "UPDATE_USER", payload: updates });
 
   return (
@@ -149,12 +150,5 @@ export const AdminAuthProvider = ({ children }) => {
 };
 
 // ── Hooks ──────────────────────────────────────────────────────────
-export const useAuth      = () => useContext(StudentAuthContext);  // student pages use this
-export const useAdminAuth = () => useContext(AdminAuthContext);    // admin pages use this
-
-// Legacy export - auto-picks based on current path
-export const useCurrentAuth = () => {
-  const studentAuth = useContext(StudentAuthContext);
-  const adminAuth   = useContext(AdminAuthContext);
-  return window.location.pathname.startsWith("/admin") ? adminAuth : studentAuth;
-};
+export const useAuth      = () => useContext(StudentAuthContext);
+export const useAdminAuth = () => useContext(AdminAuthContext);

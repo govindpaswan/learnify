@@ -1,0 +1,31 @@
+# Render.com deployment configuration
+# This deploys the full-stack app as ONE service
+
+services:
+  - type: web
+    name: learnify
+    env: node
+    region: singapore  # Closest to India
+    plan: free
+    rootDir: .
+    buildCommand: "npm install --prefix server && npm install --prefix client && npm run build --prefix client"
+    startCommand: "cd server && node server.js"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Add these in Render dashboard manually:
+      # MONGO_URI         = mongodb+srv://...
+      # JWT_SECRET        = your_secret_key
+      # CLIENT_URL        = https://your-app.onrender.com
+      # ADMIN_EMAIL       = admin@learnify.com
+      # ADMIN_PASSWORD    = YourSecurePassword
+      # CLOUDINARY_CLOUD_NAME = ...
+      # CLOUDINARY_API_KEY    = ...
+      # CLOUDINARY_API_SECRET = ...
+      # RAZORPAY_KEY_ID       = rzp_live_...
+      # RAZORPAY_KEY_SECRET   = ...
+      # EMAIL_USER            = ...
+      # EMAIL_PASS            = ...
