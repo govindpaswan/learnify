@@ -1,117 +1,84 @@
-# 🚀 Learnify — Render Deployment Guide
+# 🚀 Learnify — Render Deployment (ONE Service)
 
-## Prerequisites
-- GitHub account
-- Render.com account (free)
-- MongoDB Atlas account (free)
-- Cloudinary account (free)
+## Architecture
+One Render service hosts EVERYTHING:
+- Express API at `/api/*`
+- React frontend at all other routes
 
----
-
-## Step 1: MongoDB Atlas Setup
-
-1. Go to [mongodb.com/atlas](https://mongodb.com/atlas) → Create free cluster
-2. Database Access → Add User → username + password
-3. Network Access → Add IP → `0.0.0.0/0`
-4. Connect → Drivers → Copy connection string
-
-```
-mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/learnify
-```
-
----
-
-## Step 2: Push to GitHub
+## Step 1: Push to GitHub
 
 ```bash
 cd learnify
 git init
 git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/learnify.git
+git commit -m "Learnify v1.0"
+git remote add origin https://github.com/YOUR/learnify.git
 git push -u origin main
 ```
 
----
+## Step 2: Create ONE Web Service on Render
 
-## Step 3: Deploy on Render
+1. render.com → **New Web Service**
+2. Connect GitHub repo
+3. Settings:
 
-1. Go to [render.com](https://render.com) → Sign in
-2. **New** → **Web Service**
-3. Connect your GitHub repo
-4. Settings:
-   - **Name:** `learnify`
-   - **Region:** `Singapore` (closest to India)
-   - **Branch:** `main`
-   - **Root Directory:** *(leave empty)*
-   - **Build Command:** `npm install --prefix server && npm install --prefix client && npm run build --prefix client`
-   - **Start Command:** `cd server && node server.js`
-   - **Plan:** Free
+| Field | Value |
+|-------|-------|
+| Root Directory | *(empty)* |
+| Build Command | `npm run build` |
+| Start Command | `npm start` |
+| Region | Singapore |
+| Plan | Free |
 
-5. **Environment Variables** → Add all these:
+## Step 3: Add Environment Variables
 
-| Key | Value |
-|-----|-------|
-| `NODE_ENV` | `production` |
-| `PORT` | `10000` |
-| `MONGO_URI` | `mongodb+srv://...` |
-| `JWT_SECRET` | `your_random_32_char_secret` |
-| `CLIENT_URL` | `https://learnify.onrender.com` *(your render URL)* |
-| `ADMIN_EMAIL` | `admin@learnify.com` |
-| `ADMIN_PASSWORD` | `YourSecurePassword123!` |
-| `CLOUDINARY_CLOUD_NAME` | from Cloudinary dashboard |
-| `CLOUDINARY_API_KEY` | from Cloudinary dashboard |
-| `CLOUDINARY_API_SECRET` | from Cloudinary dashboard |
-| `RAZORPAY_KEY_ID` | from Razorpay dashboard |
-| `RAZORPAY_KEY_SECRET` | from Razorpay dashboard |
-| `EMAIL_USER` | your Gmail |
-| `EMAIL_PASS` | 16-char Gmail App Password |
+In Render → Environment tab:
 
-6. Click **Create Web Service**
+```
+NODE_ENV       = production
+PORT           = 10000
+MONGO_URI      = mongodb+srv://user:pass@cluster.mongodb.net/learnify
+JWT_SECRET     = make_this_32_chars_random_string_here
+CLIENT_URL     = https://YOUR-APP-NAME.onrender.com
+ADMIN_EMAIL    = admin@learnify.com
+ADMIN_PASSWORD = YourSecurePassword123!
 
----
+CLOUDINARY_CLOUD_NAME  = your_cloud_name
+CLOUDINARY_API_KEY     = your_api_key
+CLOUDINARY_API_SECRET  = your_api_secret
 
-## Step 4: After Deploy
+RAZORPAY_KEY_ID     = rzp_live_xxxxxx
+RAZORPAY_KEY_SECRET = your_secret
 
-Your app will be live at: `https://learnify.onrender.com`
-
-- **Student:** `https://learnify.onrender.com`
-- **Admin:** `https://learnify.onrender.com/admin/login`
-
-**Note:** Free tier sleeps after 15 min inactivity. First request takes ~30 sec to wake up.
-
----
-
-## Step 5: Seed Data (Optional)
-
-After deploy, run seed locally pointed to Atlas:
-
-```bash
-cd server
-# Update .env MONGO_URI to Atlas URL
-node seed.js
+EMAIL_HOST = smtp.gmail.com
+EMAIL_PORT = 587
+EMAIL_USER = you@gmail.com
+EMAIL_PASS = 16_char_app_password
+EMAIL_FROM = Learnify <you@gmail.com>
 ```
 
----
+## Step 4: Deploy!
 
-## Cloudinary Setup
+Click "Create Web Service" → wait 5-10 min for first build.
 
-1. [cloudinary.com](https://cloudinary.com) → Sign up free
-2. Dashboard → copy Cloud Name, API Key, API Secret
-
----
-
-## Razorpay Setup
-
-1. [razorpay.com](https://razorpay.com) → Sign up
-2. Settings → API Keys → Generate Live Keys
-3. For testing use Test Keys (rzp_test_...)
+Your URLs:
+- Site: `https://your-app.onrender.com`
+- Admin: `https://your-app.onrender.com/admin/login`
+- API: `https://your-app.onrender.com/api/health`
 
 ---
 
-## Gmail App Password
+## If You Deployed as 2 Separate Services (Frontend + Backend)
 
-1. Google Account → Security → 2-Step Verification (enable)
-2. App Passwords → Select app: Mail → Generate
-3. Copy 16-character password
+Add this env var in the **Frontend** service on Render:
+
+```
+VITE_API_URL = https://YOUR-BACKEND.onrender.com/api
+```
+
+Then redeploy the frontend service.
+
+Also add in **Backend** service:
+```
+CLIENT_URL = https://YOUR-FRONTEND.onrender.com
+```

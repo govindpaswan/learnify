@@ -1,16 +1,10 @@
 import axios from "axios";
 
-// In production (Render), frontend is served by Express
-// So API is on same domain → just use /api
-// In development, Vite proxy handles /api → localhost:5000
-const BASE_URL = import.meta.env.VITE_API_URL || "/api";
-
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 60000,
 });
 
-// Pick correct token based on current page
 const getToken = () => {
   const isAdmin = window.location.pathname.startsWith("/admin");
   return isAdmin
