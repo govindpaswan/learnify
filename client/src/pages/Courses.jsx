@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../utils/api";
 import CourseCard from "../components/common/CourseCard";
 
@@ -26,12 +26,18 @@ export default function Courses() {
     if (category) params.set("category", category);
     if (level) params.set("level", level);
     api.get(`/courses?${params}`)
-      .then(r => { setCourses(r.data.data); setPagination(r.data.pagination); })
+      .then(r => {
+        setCourses(r.data.data);
+        setPagination(r.data.pagination);
+        // ✅ FIX: Scroll to top on page change
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [search, category, level, page]);
 
   useEffect(() => { fetchCourses(); }, [fetchCourses]);
+
   useEffect(() => {
     api.get("/courses/categories").then(r => setCategories(r.data.data)).catch(() => {});
   }, []);
@@ -39,18 +45,42 @@ export default function Courses() {
   const setParam = (key, value) => {
     const p = new URLSearchParams(searchParams);
     if (value) p.set(key, value); else p.delete(key);
-    p.delete("page");
+    if (key !== "page") p.delete("page");
+    setSearchParams(p);
+  };
+
+  // ✅ FIX: Dedicated page setter
+  const goToPage = (newPage) => {
+    const p = new URLSearchParams(searchParams);
+    p.set("page", String(newPage));
     setSearchParams(p);
   };
 
   const clearFilters = () => setSearchParams({});
   const hasFilters = search || category || level;
+  const totalPages = pagination.pages || 1;
+
+  // Generate page numbers with ellipsis for large page counts
+  const getPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = [];
+    if (page <= 4) {
+      pages.push(1, 2, 3, 4, 5, "...", totalPages);
+    } else if (page >= totalPages - 3) {
+      pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, "...", page - 1, page, page + 1, "...", totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div className="page-container py-10">
       <div className="mb-8">
         <h1 className="section-title mb-2">Browse All Courses</h1>
-        <p className="text-slate-500 dark:text-slate-400">Discover {pagination.total || 0}+ courses taught by expert instructors</p>
+        <p className="text-slate-500 dark:text-slate-400">
+          Discover {pagination.total || 0}+ courses taught by expert instructors
+        </p>
       </div>
 
       {/* Search + Filter Bar */}
@@ -65,7 +95,10 @@ export default function Courses() {
           />
         </div>
         <button onClick={() => setShowFilter(!showFilter)} className="btn-secondary gap-2 shrink-0">
-          <Filter size={16} /> Filters {hasFilters && <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-xs flex items-center justify-center">!</span>}
+          <Filter size={16} /> Filters
+          {hasFilters && (
+            <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-xs flex items-center justify-center">!</span>
+          )}
         </button>
         {hasFilters && (
           <button onClick={clearFilters} className="btn-secondary text-red-500 hover:text-red-600 shrink-0">
@@ -96,7 +129,7 @@ export default function Courses() {
         </div>
       )}
 
-      {/* Grid */}
+      {/* Course Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
@@ -123,19 +156,53 @@ export default function Courses() {
         </div>
       )}
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex justify-center gap-2 mt-10">
-          {[...Array(pagination.pages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setParam("page", i + 1)}
-              className={`w-10 h-10 rounded-lg font-medium text-sm transition-colors ${page === i + 1 ? "bg-primary-600 text-white" : "btn-secondary"}`}
-            >
-              {i + 1}
-            </button>
-          ))}
+      {/* ✅ FIX: Pagination with proper click handler */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-10">
+          {/* Prev button */}
+          <button
+            onClick={() => goToPage(page - 1)}
+            disabled={page === 1}
+            className="w-10 h-10 rounded-lg btn-secondary flex items-center justify-center disabled:opacity-40"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* Page numbers */}
+          {getPageNumbers().map((p, i) =>
+            p === "..." ? (
+              <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-slate-400">...</span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => goToPage(p)}
+                className={`w-10 h-10 rounded-lg font-medium text-sm transition-all ${
+                  page === p
+                    ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-110"
+                    : "btn-secondary hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                }`}
+              >
+                {p}
+              </button>
+            )
+          )}
+
+          {/* Next button */}
+          <button
+            onClick={() => goToPage(page + 1)}
+            disabled={page === totalPages}
+            className="w-10 h-10 rounded-lg btn-secondary flex items-center justify-center disabled:opacity-40"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
+      )}
+
+      {/* Page info */}
+      {totalPages > 1 && (
+        <p className="text-center text-sm text-slate-400 mt-3">
+          Page {page} of {totalPages} — {pagination.total} courses
+        </p>
       )}
     </div>
   );
