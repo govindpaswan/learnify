@@ -16,6 +16,7 @@ A complete online learning platform with student enrollment, video lessons, quiz
 | Storage | Cloudinary |
 | PDF | PDFKit |
 | Email | Nodemailer (Gmail) |
+new
 
 ---
 
