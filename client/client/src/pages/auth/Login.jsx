@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
 
 export default function Login() {
   const { login }   = useAuth();
@@ -16,18 +17,22 @@ export default function Login() {
     if (!form.email || !form.password) return toast.error("Please fill in all fields");
     try {
       setLoading(true);
-      // login() handles role check and throws if admin tries to use student login
-      const user = await login(form);
-      toast.success("Welcome back! 👋");
-      navigate("/dashboard");
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Invalid credentials";
-      if (msg.toLowerCase().includes("admin")) {
+
+      // First check role without logging in
+      const BASE = import.meta.env.VITE_API_URL || "/api";
+      const { data: check } = await axios.post(`${BASE}/auth/login`, form);
+
+      if (check.data.role === "admin") {
+        // Admin trying to login from student page → redirect
         toast.error("This is an admin account. Please use the Admin Login page.");
         setTimeout(() => navigate("/admin/login"), 1500);
-      } else {
-        toast.error(msg);
+        return;
       }
+
+      await login(form);
+      toast.success("Welcome back! 👋");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid credentials");
     } finally { setLoading(false); }
   };
 
@@ -65,7 +70,7 @@ export default function Login() {
 
           <h1 className="font-display text-3xl font-bold text-slate-900 dark:text-white mb-2">Sign In</h1>
           <p className="text-slate-500 dark:text-slate-400 mb-8">
-            Don&apos;t have an account?{" "}
+            Don't have an account?{" "}
             <Link to="/register" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">Sign up free</Link>
           </p>
 
@@ -94,6 +99,7 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Admin link - subtle */}
           <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-5">
             Are you an admin?{" "}
             <Link to="/admin/login" className="text-primary-500 hover:text-primary-400 font-medium">Admin login →</Link>

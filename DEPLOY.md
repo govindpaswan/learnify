@@ -1,84 +1,80 @@
-# 🚀 Learnify — Render Deployment (ONE Service)
+# Learnify — Fixed & Deployment Guide
 
-## Architecture
-One Render service hosts EVERYTHING:
-- Express API at `/api/*`
-- React frontend at all other routes
-
-## Step 1: Push to GitHub
-
-```bash
-cd learnify
-git init
-git add .
-git commit -m "Learnify v1.0"
-git remote add origin https://github.com/YOUR/learnify.git
-git push -u origin main
-```
-
-## Step 2: Create ONE Web Service on Render
-
-1. render.com → **New Web Service**
-2. Connect GitHub repo
-3. Settings:
-
-| Field | Value |
-|-------|-------|
-| Root Directory | *(empty)* |
-| Build Command | `npm run build` |
-| Start Command | `npm start` |
-| Region | Singapore |
-| Plan | Free |
-
-## Step 3: Add Environment Variables
-
-In Render → Environment tab:
-
-```
-NODE_ENV       = production
-PORT           = 10000
-MONGO_URI      = mongodb+srv://user:pass@cluster.mongodb.net/learnify
-JWT_SECRET     = make_this_32_chars_random_string_here
-CLIENT_URL     = https://YOUR-APP-NAME.onrender.com
-ADMIN_EMAIL    = admin@learnify.com
-ADMIN_PASSWORD = YourSecurePassword123!
-
-CLOUDINARY_CLOUD_NAME  = your_cloud_name
-CLOUDINARY_API_KEY     = your_api_key
-CLOUDINARY_API_SECRET  = your_api_secret
-
-RAZORPAY_KEY_ID     = rzp_live_xxxxxx
-RAZORPAY_KEY_SECRET = your_secret
-
-EMAIL_HOST = smtp.gmail.com
-EMAIL_PORT = 587
-EMAIL_USER = you@gmail.com
-EMAIL_PASS = 16_char_app_password
-EMAIL_FROM = Learnify <you@gmail.com>
-```
-
-## Step 4: Deploy!
-
-Click "Create Web Service" → wait 5-10 min for first build.
-
-Your URLs:
-- Site: `https://your-app.onrender.com`
-- Admin: `https://your-app.onrender.com/admin/login`
-- API: `https://your-app.onrender.com/api/health`
+## ✅ Bugs Fixed
+1. **Blank screen / TypeError** — `AuthContext.jsx` had `action.payload.token` crash when payload was undefined. Added null guards in both student & admin LOGIN reducers.
+2. **Double API call** — `Login.jsx` was hitting the backend twice (once manually, once via `login()`). Fixed to single call.
+3. **Missing redirect** — Login now explicitly navigates to `/dashboard` after success.
 
 ---
 
-## If You Deployed as 2 Separate Services (Frontend + Backend)
+## 🚀 Render.com (Single Service — Recommended)
 
-Add this env var in the **Frontend** service on Render:
+**Build Command:**
+```
+npm install --prefix server && npm install --prefix client && npm run build --prefix client
+```
+**Start Command:**
+```
+node server/server.js
+```
 
+**Environment Variables to set on Render:**
 ```
-VITE_API_URL = https://YOUR-BACKEND.onrender.com/api
+NODE_ENV=production
+MONGO_URI=mongodb+srv://...
+JWT_SECRET=your_secret_here
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+RAZORPAY_KEY_ID=...
+RAZORPAY_KEY_SECRET=...
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=StrongPassword123
+CLIENT_URL=https://your-app.onrender.com
 ```
 
-Then redeploy the frontend service.
+The `client/.env.production` is already set to `VITE_API_URL=/api` ✅
 
-Also add in **Backend** service:
+---
+
+## 🌐 VPS / cPanel (Separate Frontend + Backend)
+
+### Backend
+```bash
+cd server && npm install
+node server.js   # or: pm2 start server.js
 ```
-CLIENT_URL = https://YOUR-FRONTEND.onrender.com
+
+### Frontend — Build Locally
+```bash
+# Set your backend URL first:
+echo "VITE_API_URL=https://api.yourdomain.com/api" > client/.env.production
+
+cd client && npm install && npm run build
+# Upload client/dist/ to your public_html or subdomain folder
 ```
+
+### ⚠️ SPA Routing — REQUIRED for non-Render hosting
+
+**Nginx:**
+```nginx
+location / {
+  try_files $uri $uri/ /index.html;
+}
+```
+
+**Apache / cPanel `.htaccess`** (place in dist/ folder):
+```apache
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [QSA,L]
+```
+
+Without this, refreshing any page other than `/` shows a blank screen.
+
+---
+
+## 🔑 First Login
+- Admin: use `ADMIN_EMAIL` and `ADMIN_PASSWORD` from your env vars
+- The admin account is auto-created on first server start

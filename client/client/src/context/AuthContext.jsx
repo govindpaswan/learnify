@@ -26,17 +26,8 @@ function studentReducer(state, action) {
       return { ...state, user: action.payload, isAuthenticated: true, loading: false };
     case "SET_LOADING":
       return { ...state, loading: false };
-    case "LOGIN": {
-      // Guard: payload must exist and have a token
-      if (!action.payload) return { ...state, loading: false };
-      return {
-        ...state,
-        user: action.payload,
-        token: action.payload.token || null,
-        isAuthenticated: true,
-        loading: false,
-      };
-    }
+    case "LOGIN":
+      return { ...state, user: action.payload, token: action.payload.token, isAuthenticated: true, loading: false };
     case "LOGOUT":
       return { user: null, token: null, isAuthenticated: false, loading: false };
     case "UPDATE":
@@ -73,7 +64,6 @@ export function StudentAuthProvider({ children }) {
   async function login(credentials) {
     const { data } = await axios.post(`${getApiBase()}/auth/login`, credentials);
     const user = data.data;
-    if (!user) throw new Error("Invalid response from server");
     if (user.role !== "student") {
       const err = new Error("This is an admin account. Please use Admin Login.");
       err.response = { data: { message: err.message } };
@@ -87,7 +77,6 @@ export function StudentAuthProvider({ children }) {
   async function register(body) {
     const { data } = await axios.post(`${getApiBase()}/auth/register`, body);
     const user = data.data;
-    if (!user) throw new Error("Invalid response from server");
     localStorage.setItem("learnify-student-token", user.token);
     dispatch({ type: "LOGIN", payload: user });
     return user;
@@ -120,17 +109,8 @@ function adminReducer(state, action) {
       return { ...state, user: action.payload, isAuthenticated: true, loading: false };
     case "SET_LOADING":
       return { ...state, loading: false };
-    case "LOGIN": {
-      // Guard: payload must exist and have a token
-      if (!action.payload) return { ...state, loading: false };
-      return {
-        ...state,
-        user: action.payload,
-        token: action.payload.token || null,
-        isAuthenticated: true,
-        loading: false,
-      };
-    }
+    case "LOGIN":
+      return { ...state, user: action.payload, token: action.payload.token, isAuthenticated: true, loading: false };
     case "LOGOUT":
       return { user: null, token: null, isAuthenticated: false, loading: false };
     case "UPDATE":
@@ -167,7 +147,6 @@ export function AdminAuthProvider({ children }) {
   async function login(credentials) {
     const { data } = await axios.post(`${getApiBase()}/auth/login`, credentials);
     const user = data.data;
-    if (!user) throw new Error("Invalid response from server");
     if (user.role !== "admin") {
       const err = new Error("Access denied. Admin account required.");
       err.response = { data: { message: err.message } };
