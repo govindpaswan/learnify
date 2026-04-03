@@ -77,4 +77,4 @@ Without this, refreshing any page other than `/` shows a blank screen.
 
 ## 🔑 First Login
 - Admin: use `ADMIN_EMAIL` and `ADMIN_PASSWORD` from your env vars
-- The admin account is auto-created on first server start.
+- The admin account is auto-created on first server start

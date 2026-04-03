@@ -19,7 +19,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: "https://learnify-server-7stm.onrender.com", changeOrigin: true },
+      "/api": { target: "http://localhost:5000", changeOrigin: true },
     },
   },
 });
